@@ -187,7 +187,7 @@ with tab_edit:
             # Data Editor
             edited_df = st.data_editor(
                 df_to_edit,
-                use_container_width=True,
+                width="stretch", 
                 num_rows="dynamic",
                 hide_index=True,
                 key=f"editor_v2_{sheet}"
