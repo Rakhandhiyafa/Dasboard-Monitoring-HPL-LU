@@ -85,14 +85,15 @@ data_sheets = load_all_data()
 if 'edited_data' not in st.session_state:
     st.session_state.edited_data = {s: df.copy() for s, df in data_sheets.items()}
 
-# KALKULASI METRIK UTAMA
+# KALKULASI METRIK UTAMA (Update: Selesai + Under Review)
 all_status = []
 for sheet, df in st.session_state.edited_data.items():
     if 'Status' in df.columns:
         all_status.extend(df['Status'].fillna('Pending').tolist())
 
 total_task = len(all_status)
-selesai_count = len([x for x in all_status if 'Selesai' in str(x)])
+# Update logika: hitung jika mengandung kata 'Selesai' ATAU 'Under Review'
+selesai_count = len([x for x in all_status if 'selesai' in str(x).lower() or 'under review' in str(x).lower()])
 persen_total = (selesai_count / total_task * 100) if total_task > 0 else 0
 
 # --- TAB KONTEN UTAMA ---
@@ -104,7 +105,7 @@ with tab_dash:
     with m1:
         st.markdown(f'<div class="stat-card"><p style="color:#757575;margin:0;">Total Task</p><h2 style="margin:0;">{total_task}</h2></div>', unsafe_allow_html=True)
     with m2:
-        st.markdown(f'<div class="stat-card"><p style="color:#757575;margin:0;">Selesai</p><h2 style="margin:0;color:#2E7D32;">{selesai_count}</h2></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="stat-card"><p style="color:#757575;margin:0;">Selesai / Review</p><h2 style="margin:0;color:#2E7D32;">{selesai_count}</h2></div>', unsafe_allow_html=True)
     with m3:
         st.markdown(f'<div class="stat-card"><p style="color:#757575;margin:0;">Completion Rate</p><h2 style="margin:0;color:#E53935;">{persen_total:.1f}%</h2></div>', unsafe_allow_html=True)
     with m4:
@@ -134,7 +135,8 @@ with tab_dash:
         cat_data = []
         for s, df in st.session_state.edited_data.items():
             if 'Status' in df.columns:
-                done = len(df[df['Status'].astype(str).str.contains('Selesai', na=False, case=False)])
+                # Update logika: mencari 'Selesai' ATAU 'Under Review'
+                done = len(df[df['Status'].astype(str).str.contains('Selesai|Under Review', na=False, case=False, regex=True)])
                 total = len(df)
                 cat_data.append({"Category": s, "Done": done, "Total": total})
         
@@ -149,7 +151,7 @@ with tab_dash:
 
     st.markdown("<hr>", unsafe_allow_html=True)
     
-    # 3. Row Trend Harian (BARU)
+    # 3. Row Trend Harian 
     st.subheader("📈 Chart Penyelesaian Harian")
     
     daily_data = []
@@ -159,8 +161,8 @@ with tab_dash:
         date_col = next((col for col in df.columns if 'tanggal' in str(col).lower()), None)
         
         if 'Status' in df.columns and date_col:
-            # Saring hanya task yang statusnya Selesai
-            df_selesai = df[df['Status'].astype(str).str.contains('Selesai', na=False, case=False)]
+            # Update logika: Saring task yang statusnya Selesai ATAU Under Review
+            df_selesai = df[df['Status'].astype(str).str.contains('Selesai|Under Review', na=False, case=False, regex=True)]
             # Masukkan semua tanggal valid ke dalam list
             for val in df_selesai[date_col].dropna():
                 daily_data.append({'Tanggal': val})
@@ -181,12 +183,12 @@ with tab_dash:
                                 color_discrete_sequence=["#E53935"])
             fig_trend.update_traces(line=dict(width=3), marker=dict(size=8))
             fig_trend.update_layout(height=300, margin=dict(t=10, b=0, l=0, r=0),
-                                    xaxis_title="", yaxis_title="Task Diselesaikan")
+                                    xaxis_title="", yaxis_title="Task Selesai / Review")
             st.plotly_chart(fig_trend, use_container_width=True)
         else:
-            st.info("⚠️ Belum ada format tanggal valid pada task yang selesai.")
+            st.info("⚠️ Belum ada format tanggal valid pada task yang selesai/review.")
     else:
-        st.info("⚠️ Kolom yang memuat 'Tanggal' tidak ditemukan, atau belum ada task yang selesai.")
+        st.info("⚠️ Kolom yang memuat 'Tanggal' tidak ditemukan, atau belum ada task yang selesai/review.")
 
 with tab_edit:
     st.subheader("Detail Data & Live Editor")
@@ -208,7 +210,7 @@ with tab_edit:
                 with col_t1:
                     st.info(f"Mengedit {len(df_to_edit)} baris data di kategori {sheet}.")
             
-            # Data Editor dengan perbaikan "use_container_width" menjadi width="stretch"
+            # Data Editor 
             edited_df = st.data_editor(
                 df_to_edit,
                 width="stretch", 
