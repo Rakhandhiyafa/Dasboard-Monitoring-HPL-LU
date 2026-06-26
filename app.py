@@ -4,10 +4,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from streamlit_gsheets import GSheetsConnection
 
-# 1. Konfigurasi Halaman
 st.set_page_config(page_title="Monitoring LU | Dashboard", page_icon="📈", layout="wide")
 
-# 2. CSS Kustom untuk Estetika Minimalis & Modern
 st.markdown("""
     <style>
     /* Global Styles */
@@ -69,7 +67,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. Koneksi Google Sheets
 conn = st.connection("gsheets", type=GSheetsConnection)
 SHEET_NAMES = ["Video", "Artikel", "Infographics", "Audio", "Quiz"]
 
@@ -84,7 +81,6 @@ def load_all_data():
             all_dfs[sheet] = pd.DataFrame()
     return all_dfs
 
-# Header UI
 st.markdown("""
     <div class="main-header">
         <h1 style="margin:0; color:white;">Project Monitoring Dashboard</h1>
@@ -94,11 +90,9 @@ st.markdown("""
 
 data_sheets = load_all_data()
 
-# Initialize Session State
 if 'edited_data' not in st.session_state:
     st.session_state.edited_data = {s: df.copy() for s, df in data_sheets.items()}
 
-# --- LOGIC PERHITUNGAN PROGRESS ---
 all_status = []
 for sheet, df in st.session_state.edited_data.items():
     if 'Status' in df.columns:
@@ -108,11 +102,9 @@ total_task = len(all_status)
 selesai_count = len([x for x in all_status if 'Selesai' in str(x)])
 persen_total = (selesai_count / total_task * 100) if total_task > 0 else 0
 
-# --- TAMPILAN DASHBOARD ---
 tab_dash, tab_edit, tab_sync = st.tabs(["📊 Analytics Dashboard", "📝 Interactive Editor", "🔄 Sync Status"])
 
 with tab_dash:
-    # Row 1: Key Metrics
     m1, m2, m3, m4 = st.columns(4)
     with m1:
         st.markdown(f'<div class="stat-card"><p style="color:#757575;margin:0;">Total Task</p><h2 style="margin:0;">{total_task}</h2></div>', unsafe_allow_html=True)
@@ -125,12 +117,11 @@ with tab_dash:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Row 2: Charts
     c1, c2 = st.columns([1, 1])
     
     with c1:
         st.subheader("Overall Status Distribution")
-        if all_status: # Cek jika list status tidak kosong
+        if all_status: 
             fig_pie = px.pie(
                 values=[all_status.count(s) for s in set(all_status)], 
                 names=list(set(all_status)),
@@ -146,7 +137,7 @@ with tab_dash:
         st.subheader("Progress per Category")
         cat_data = []
         for s, df in st.session_state.edited_data.items():
-            # Pastikan kolom "Status" benar-benar ada (Case-sensitive)
+            
             if 'Status' in df.columns:
                 done = len(df[df['Status'].astype(str).str.contains('Selesai', na=False, case=False)])
                 total = len(df)
@@ -154,7 +145,6 @@ with tab_dash:
         
         df_cat = pd.DataFrame(cat_data)
         
-        # Cek apakah dataframe berhasil terbentuk sebelum membuat grafik
         if not df_cat.empty:
             fig_bar = px.bar(df_cat, x="Category", y=["Done", "Total"], barmode="group",
                              color_discrete_map={"Done": "#E53935", "Total": "#E0E0E0"})
@@ -171,7 +161,6 @@ with tab_edit:
         with sub_tabs[i]:
             df_to_edit = st.session_state.edited_data[sheet]
             
-            # Tambahkan visualisasi mini per sheet
             if not df_to_edit.empty and 'Status' in df_to_edit.columns:
                 col_t1, col_t2 = st.columns([2, 1])
                 with col_t2:
@@ -184,7 +173,6 @@ with tab_edit:
                 with col_t1:
                     st.info(f"Mengedit {len(df_to_edit)} baris data di kategori {sheet}.")
             
-            # Data Editor
             edited_df = st.data_editor(
                 df_to_edit,
                 width="stretch", 
@@ -214,7 +202,6 @@ with tab_sync:
             except Exception as e:
                 st.error(f"Sync Gagal: {e}")
 
-# Sidebar info
 st.sidebar.image("https://img.icons8.com/fluency/96/000000/dashboard.png", width=80)
 st.sidebar.title("App Settings")
 st.sidebar.info("Gunakan Dashboard untuk melihat insight cepat dan Editor untuk mengubah data harian.")
