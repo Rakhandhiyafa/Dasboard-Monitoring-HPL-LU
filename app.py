@@ -211,4 +211,11 @@ if st.sidebar.button("Clear Cache"):
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(
-st.sidebar.info("Created by : Rakhandhiya Fasya.")
+    """
+    <div style='text-align: center; color: #9E9E9E; font-size: 13px; margin-top: 2rem;'>
+        Created by :<br>
+        <b style='color: #E53935;'>Rakhandhiya Fasya Albana</b>
+    </div>
+    """, 
+    unsafe_allow_html=True
+)
