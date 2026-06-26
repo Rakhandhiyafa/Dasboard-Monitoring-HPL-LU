@@ -150,7 +150,7 @@ with tab_dash:
     st.markdown("<hr>", unsafe_allow_html=True)
     
     # 3. Row Trend Harian (BARU)
-    st.subheader("📈 Trend Penyelesaian Harian")
+    st.subheader("📈 Chart Penyelesaian Harian")
     
     daily_data = []
     # Mengumpulkan data tanggal dari semua sheet
