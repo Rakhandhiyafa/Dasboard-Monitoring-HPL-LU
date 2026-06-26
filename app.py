@@ -4,17 +4,15 @@ import plotly.express as px
 import plotly.graph_objects as go
 from streamlit_gsheets import GSheetsConnection
 
+# --- KONFIGURASI HALAMAN ---
 st.set_page_config(page_title="Monitoring LU | Dashboard", page_icon="📈", layout="wide")
 
 st.markdown("""
     <style>
-    /* Global Styles */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
     html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-    
     .stApp { background-color: #FAFAFA; }
     
-    /* Header Styling */
     .main-header {
         background: linear-gradient(90deg, #E53935 0%, #B71C1C 100%);
         padding: 2rem;
@@ -23,8 +21,6 @@ st.markdown("""
         margin-bottom: 2rem;
         box-shadow: 0 4px 15px rgba(229, 57, 53, 0.2);
     }
-    
-    /* Card Styling */
     .stat-card {
         background: white;
         padding: 1.5rem;
@@ -33,8 +29,6 @@ st.markdown("""
         box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         text-align: center;
     }
-    
-    /* Button Styling */
     .stButton>button {
         background-color: #E53935;
         color: white;
@@ -43,14 +37,11 @@ st.markdown("""
         padding: 0.6rem 2rem;
         font-weight: 600;
         transition: 0.3s;
-        width: 100%;
     }
     .stButton>button:hover {
         background-color: #B71C1C;
         box-shadow: 0 4px 12px rgba(229, 57, 53, 0.3);
     }
-    
-    /* Custom Tabs */
     .stTabs [data-baseweb="tab-list"] { gap: 8px; }
     .stTabs [data-baseweb="tab"] {
         background-color: white;
@@ -67,6 +58,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# --- KONEKSI DATA ---
 conn = st.connection("gsheets", type=GSheetsConnection)
 SHEET_NAMES = ["Video", "Artikel", "Infographics", "Audio", "Quiz"]
 
@@ -93,6 +85,7 @@ data_sheets = load_all_data()
 if 'edited_data' not in st.session_state:
     st.session_state.edited_data = {s: df.copy() for s, df in data_sheets.items()}
 
+# KALKULASI METRIK UTAMA
 all_status = []
 for sheet, df in st.session_state.edited_data.items():
     if 'Status' in df.columns:
@@ -102,9 +95,11 @@ total_task = len(all_status)
 selesai_count = len([x for x in all_status if 'Selesai' in str(x)])
 persen_total = (selesai_count / total_task * 100) if total_task > 0 else 0
 
+# --- TAB KONTEN UTAMA ---
 tab_dash, tab_edit, tab_sync = st.tabs(["📊 Analytics Dashboard", "📝 Interactive Editor", "🔄 Sync Status"])
 
 with tab_dash:
+    # 1. Row Metrik
     m1, m2, m3, m4 = st.columns(4)
     with m1:
         st.markdown(f'<div class="stat-card"><p style="color:#757575;margin:0;">Total Task</p><h2 style="margin:0;">{total_task}</h2></div>', unsafe_allow_html=True)
@@ -117,6 +112,7 @@ with tab_dash:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
+    # 2. Row Pie & Bar Chart
     c1, c2 = st.columns([1, 1])
     
     with c1:
@@ -137,14 +133,12 @@ with tab_dash:
         st.subheader("Progress per Category")
         cat_data = []
         for s, df in st.session_state.edited_data.items():
-            
             if 'Status' in df.columns:
                 done = len(df[df['Status'].astype(str).str.contains('Selesai', na=False, case=False)])
                 total = len(df)
                 cat_data.append({"Category": s, "Done": done, "Total": total})
         
         df_cat = pd.DataFrame(cat_data)
-        
         if not df_cat.empty:
             fig_bar = px.bar(df_cat, x="Category", y=["Done", "Total"], barmode="group",
                              color_discrete_map={"Done": "#E53935", "Total": "#E0E0E0"})
@@ -152,6 +146,47 @@ with tab_dash:
             st.plotly_chart(fig_bar, use_container_width=True)
         else:
             st.info("⚠️ Data kategori belum tersedia untuk ditampilkan.")
+
+    st.markdown("<hr>", unsafe_allow_html=True)
+    
+    # 3. Row Trend Harian (BARU)
+    st.subheader("📈 Trend Penyelesaian Harian")
+    
+    daily_data = []
+    # Mengumpulkan data tanggal dari semua sheet
+    for s, df in st.session_state.edited_data.items():
+        # Coba mencari kolom yang mengandung kata "Tanggal" (misal: Tanggal Selesai)
+        date_col = next((col for col in df.columns if 'tanggal' in str(col).lower()), None)
+        
+        if 'Status' in df.columns and date_col:
+            # Saring hanya task yang statusnya Selesai
+            df_selesai = df[df['Status'].astype(str).str.contains('Selesai', na=False, case=False)]
+            # Masukkan semua tanggal valid ke dalam list
+            for val in df_selesai[date_col].dropna():
+                daily_data.append({'Tanggal': val})
+                
+    if daily_data:
+        df_daily = pd.DataFrame(daily_data)
+        # Normalisasi format tanggal agar seragam
+        df_daily['Tanggal'] = pd.to_datetime(df_daily['Tanggal'], errors='coerce').dt.date
+        df_daily = df_daily.dropna() # Buang data yang bukan format tanggal
+        
+        if not df_daily.empty:
+            # Hitung jumlah penyelesaian per hari
+            df_trend = df_daily.groupby('Tanggal').size().reset_index(name='Jumlah Task')
+            df_trend = df_trend.sort_values('Tanggal')
+            
+            # Buat grafik garis
+            fig_trend = px.line(df_trend, x='Tanggal', y='Jumlah Task', markers=True,
+                                color_discrete_sequence=["#E53935"])
+            fig_trend.update_traces(line=dict(width=3), marker=dict(size=8))
+            fig_trend.update_layout(height=300, margin=dict(t=10, b=0, l=0, r=0),
+                                    xaxis_title="", yaxis_title="Task Diselesaikan")
+            st.plotly_chart(fig_trend, use_container_width=True)
+        else:
+            st.info("⚠️ Belum ada format tanggal valid pada task yang selesai.")
+    else:
+        st.info("⚠️ Kolom yang memuat 'Tanggal' tidak ditemukan, atau belum ada task yang selesai.")
 
 with tab_edit:
     st.subheader("Detail Data & Live Editor")
@@ -173,6 +208,7 @@ with tab_edit:
                 with col_t1:
                     st.info(f"Mengedit {len(df_to_edit)} baris data di kategori {sheet}.")
             
+            # Data Editor dengan perbaikan "use_container_width" menjadi width="stretch"
             edited_df = st.data_editor(
                 df_to_edit,
                 width="stretch", 
@@ -191,7 +227,7 @@ with tab_sync:
     """, unsafe_allow_html=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("🚀 Push Changes to Cloud (Google Sheets)"):
+    if st.button("🚀 Push Changes to Cloud (Google Sheets)", width="stretch"):
         with st.spinner("Synchronizing data..."):
             try:
                 for s in SHEET_NAMES:
@@ -202,13 +238,16 @@ with tab_sync:
             except Exception as e:
                 st.error(f"Sync Gagal: {e}")
 
+# --- SIDEBAR & SETTINGS ---
 st.sidebar.image("https://img.icons8.com/fluency/96/000000/dashboard.png", width=80)
 st.sidebar.title("App Settings")
 st.sidebar.info("Gunakan Dashboard untuk melihat insight cepat dan Editor untuk mengubah data harian.")
-if st.sidebar.button("Clear Cache"):
+
+if st.sidebar.button("Clear Cache", width="stretch"):
     st.cache_data.clear()
     st.rerun()
 
+# Watermark
 st.sidebar.markdown("---")
 st.sidebar.markdown(
     """
