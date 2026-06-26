@@ -130,29 +130,38 @@ with tab_dash:
     
     with c1:
         st.subheader("Overall Status Distribution")
-        fig_pie = px.pie(
-            values=[all_status.count(s) for s in set(all_status)], 
-            names=list(set(all_status)),
-            hole=0.5,
-            color_discrete_sequence=px.colors.qualitative.Pastel
-        )
-        fig_pie.update_layout(margin=dict(t=0, b=0, l=0, r=0), height=300)
-        st.plotly_chart(fig_pie, use_container_width=True)
+        if all_status: # Cek jika list status tidak kosong
+            fig_pie = px.pie(
+                values=[all_status.count(s) for s in set(all_status)], 
+                names=list(set(all_status)),
+                hole=0.5,
+                color_discrete_sequence=px.colors.qualitative.Pastel
+            )
+            fig_pie.update_layout(margin=dict(t=0, b=0, l=0, r=0), height=300)
+            st.plotly_chart(fig_pie, use_container_width=True)
+        else:
+            st.info("⚠️ Kolom 'Status' tidak ditemukan atau data kosong.")
 
     with c2:
         st.subheader("Progress per Category")
         cat_data = []
         for s, df in st.session_state.edited_data.items():
+            # Pastikan kolom "Status" benar-benar ada (Case-sensitive)
             if 'Status' in df.columns:
-                done = len(df[df['Status'].astype(str).str.contains('Selesai', na=False)])
+                done = len(df[df['Status'].astype(str).str.contains('Selesai', na=False, case=False)])
                 total = len(df)
                 cat_data.append({"Category": s, "Done": done, "Total": total})
         
         df_cat = pd.DataFrame(cat_data)
-        fig_bar = px.bar(df_cat, x="Category", y=["Done", "Total"], barmode="group",
-                         color_discrete_map={"Done": "#E53935", "Total": "#E0E0E0"})
-        fig_bar.update_layout(height=300, margin=dict(t=0, b=0))
-        st.plotly_chart(fig_bar, use_container_width=True)
+        
+        # Cek apakah dataframe berhasil terbentuk sebelum membuat grafik
+        if not df_cat.empty:
+            fig_bar = px.bar(df_cat, x="Category", y=["Done", "Total"], barmode="group",
+                             color_discrete_map={"Done": "#E53935", "Total": "#E0E0E0"})
+            fig_bar.update_layout(height=300, margin=dict(t=0, b=0))
+            st.plotly_chart(fig_bar, use_container_width=True)
+        else:
+            st.info("⚠️ Data kategori belum tersedia untuk ditampilkan.")
 
 with tab_edit:
     st.subheader("Detail Data & Live Editor")
