@@ -249,4 +249,3 @@ if st.sidebar.button("Clear Cache", width="stretch"):
     st.cache_data.clear()
     st.rerun()
 
-)
