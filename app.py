@@ -4,10 +4,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from streamlit_gsheets import GSheetsConnection
 
-# --- KONFIGURASI HALAMAN ---
 st.set_page_config(page_title="Monitoring LU | Dashboard", page_icon="📈", layout="wide")
 
-# --- CSS CUSTOM TEMA BARU (NAVY & TEAL) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -69,12 +67,11 @@ with col_head:
     """, unsafe_allow_html=True)
 with col_logo:
     st.markdown("<div style='text-align: right; margin-top: 15px;'>", unsafe_allow_html=True)
-    st.image("https://drive.google.com/file/d/1kRB3-1DJKPYUbqKR0ufIK_rw4BtyHuip/view?usp=sharing", use_container_width=True)
+    st.image("assets/logo.jpeg", use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# --- KONEKSI DATA ---
 conn = st.connection("gsheets", type=GSheetsConnection)
 SHEET_NAMES = ["Video", "Artikel", "Infographics", "Audio", "Quiz"]
 
@@ -126,7 +123,6 @@ with tab_dash:
     with c1:
         st.subheader("Overall Status Distribution")
         if all_status: 
-            # Menggunakan skema warna yang disesuaikan
             fig_pie = px.pie(
                 values=[all_status.count(s) for s in set(all_status)], 
                 names=list(set(all_status)),
@@ -239,7 +235,6 @@ with tab_sync:
             except Exception as e:
                 st.error(f"Sync Gagal: {e}")
 
-# --- SIDEBAR & SETTINGS ---
 st.sidebar.image("https://img.icons8.com/fluency/96/000000/dashboard.png", width=80)
 st.sidebar.title("App Settings")
 st.sidebar.info("Gunakan Dashboard untuk melihat insight cepat dan Editor untuk mengubah data harian.")
