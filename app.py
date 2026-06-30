@@ -59,7 +59,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- HEADER & LOGO PLACEHOLDER ---
 col_head, col_logo = st.columns([5, 1])
 with col_head:
     st.markdown("""
@@ -69,9 +68,8 @@ with col_head:
         </div>
     """, unsafe_allow_html=True)
 with col_logo:
-    # Placeholder Logo (Bisa diganti dengan URL gambar logo Anda)
     st.markdown("<div style='text-align: right; margin-top: 15px;'>", unsafe_allow_html=True)
-    st.image("https://dummyimage.com/200x80/f0f0f0/969799.png&text=LOGO+HERE", use_container_width=True)
+    st.image("https://drive.google.com/file/d/1kRB3-1DJKPYUbqKR0ufIK_rw4BtyHuip/view?usp=sharing", use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
@@ -96,7 +94,7 @@ data_sheets = load_all_data()
 if 'edited_data' not in st.session_state:
     st.session_state.edited_data = {s: df.copy() for s, df in data_sheets.items()}
 
-# KALKULASI METRIK UTAMA
+
 all_status = []
 for sheet, df in st.session_state.edited_data.items():
     if 'Status' in df.columns:
@@ -106,11 +104,10 @@ total_task = len(all_status)
 selesai_count = len([x for x in all_status if 'selesai' in str(x).lower() or 'under review' in str(x).lower()])
 persen_total = (selesai_count / total_task * 100) if total_task > 0 else 0
 
-# --- TAB KONTEN UTAMA ---
 tab_dash, tab_edit, tab_sync = st.tabs(["📊 Analytics Dashboard", "📝 Interactive Editor", "🔄 Sync Status"])
 
 with tab_dash:
-    # 1. Row Metrik
+  
     m1, m2, m3, m4 = st.columns(4)
     with m1:
         st.markdown(f'<div class="stat-card"><p style="color:#969799;margin:0;">Total Task</p><h2 style="margin:0;color:#1F2755;">{total_task}</h2></div>', unsafe_allow_html=True)
@@ -123,7 +120,7 @@ with tab_dash:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # 2. Row Pie & Bar Chart
+    
     c1, c2 = st.columns([1, 1])
     
     with c1:
@@ -161,7 +158,7 @@ with tab_dash:
 
     st.markdown("<hr>", unsafe_allow_html=True)
     
-    # 3. Row Trend Harian 
+   
     st.subheader("📈 Chart Penyelesaian Harian")
     
     daily_data = []
